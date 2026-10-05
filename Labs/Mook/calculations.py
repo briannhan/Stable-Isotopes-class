@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import pandas as pd
 from matplotlib import pyplot as plt
+from scipy.stats import linregress
 
 cwd = Path(os.getcwd())
 dataPath = cwd/"Data for Mook Lab-clean.xlsx"
@@ -35,6 +36,7 @@ delta13CvialB = data.loc[data.vial == "B", "delta13C_CO2"].mean()
 # %%
 # Task 2
 enrichmentFactors = data.groupby("Temp")["delta13C_CO2"].mean()
+# Formula from lab
 enrichmentFactors = delta13CvialB - enrichmentFactors
 enrichmentFactors = (enrichmentFactors.reset_index()
                      .query("Temp != 'Ref'")
@@ -45,3 +47,38 @@ enrichmentFactors = (enrichmentFactors.reset_index()
 enrichmentFactors["tempKelvin"] = enrichmentFactors.Temp + 273.15
 enrichmentFactors["xValues"] = 1000/enrichmentFactors["tempKelvin"]
 enrichmentFactors["MookEnrichmentFactors"] = (9483/enrichmentFactors.tempKelvin) - 23.89
+
+# Creating the figure and subplot in matplotlib first before ploting the data
+enrichmentFactorFigure = plt.figure("Enrichment factor figure", (10, 10))
+enrichmentFactorSubplot = enrichmentFactorFigure.add_subplot(1, 1, 1)
+enrichmentFactorSubplot.set_xlabel("1000/Temperature in Kelvin")
+enrichmentFactorSubplot.set_ylabel("Enrichment factor (‰)")
+enrichmentFactorSubplot.grid()
+
+"""Task 3 also asked me to compare slopes between the data from the class and
+from Mook et al 1974. Need to do some regression to get the slope for the class
+data.
+
+Since the Mook equation is epsilon = (9483/T) - 23.89 and we're plotting a
+figure where the x-axis is in 1000/T, we can rearrange the Mook equation as
+follows
+epsilon = 9.483*(1,000/T) - 23.89
+which would give the Mook relationship a slope of 9.483.
+
+Now, to calculate the slope for the class data. I'll just do some linear
+regression on the class data.
+"""
+classLinRegression = linregress(enrichmentFactors.xValues.tolist(), enrichmentFactors.enrichmentFactors.tolist())
+classSlope = classLinRegression.slope
+linRegressY = classLinRegression.slope*enrichmentFactors.xValues + classLinRegression.intercept
+
+# Plotting the data
+classData = enrichmentFactorSubplot.scatter(enrichmentFactors.xValues, enrichmentFactors.enrichmentFactors, label="Class data")
+classRegress = enrichmentFactorSubplot.plot(enrichmentFactors.xValues, linRegressY, label="Regression of class data")
+mookPlot = enrichmentFactorSubplot.plot(enrichmentFactors.xValues, enrichmentFactors.MookEnrichmentFactors, color="#FFC107", label="Mook et al 1974")
+plt.legend()
+
+# Saving the figure
+figurePath = cwd/"Enrichment factor vs temperature.png"
+if os.path.exists(figurePath) is False:
+    enrichmentFactorFigure.savefig(figurePath, dpi=400, bbox_inches="tight")
