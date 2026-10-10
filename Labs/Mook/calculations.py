@@ -82,3 +82,33 @@ plt.legend()
 figurePath = cwd/"Enrichment factor vs temperature.png"
 if os.path.exists(figurePath) is False:
     enrichmentFactorFigure.savefig(figurePath, dpi=400, bbox_inches="tight")
+
+# %%
+# Task 5
+
+
+def deltaBicarbonate(deltaGas, kelvin):
+    """
+    I derived an equation to calculate the isotopic composition of bicarbonate
+    using the isotopic composition of CO2 and temperature in Kelvin. This
+    function uses this equation to calculate the isotopic composition of
+    bicarbonate
+
+    Parameters
+    ----------
+    deltaGas : float
+        Isotopic composition of CO2 gas.
+    kelvin : float
+        Temperature in Kelvin.
+
+    Returns
+    -------
+    FLoat representing the isotopic composition of bicarbonate
+    """
+    numerator = deltaGas + 1000
+    denominator = (9483/(1000*kelvin)) + 0.97611
+    deltaBicarbonate = (numerator/denominator) - 1000
+    return deltaBicarbonate
+
+
+bicarbonate = deltaBicarbonate(-8.2, 298.15)
